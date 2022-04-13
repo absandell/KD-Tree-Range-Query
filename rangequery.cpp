@@ -9,28 +9,81 @@ bool foundPoint(vector<int> nodePoint, vector<int> searchPoint) {
 	return true;
 }
 
-KDNode* KDTree::createKDNode(vector<int> dimensions) {
+KDNode* KDTree::createKDNode(vector<int> datapoint) {
+	cout << "Creating True Root" << endl;
 	KDNode* newNode = new KDNode();
-	for (int i = 0; i < dimensions.size(); i++) newNode->dimensions.push_back(dimensions[i]);
+	newNode->dimensions.push_back(datapoint);
 	newNode->left = nullptr;
 	newNode->right = nullptr;
+	newNode->isLeaf = true;
 	return newNode;
 }
 
-KDNode* KDTree::insertKDNode(KDNode* rootNode, vector<int> datapoint) {
-	return(insertKDNodeRecursively(rootNode, datapoint, 0));
+KDNode* KDTree::insertKDNode(KDNode* rootNode, vector<int> datapoint, int indexBlock) {
+	return(insertKDNodeRecursively(rootNode, datapoint, 0, indexBlock));
 }
 
 
-KDNode* KDTree::insertKDNodeRecursively(KDNode* rootNode, vector<int> datapoint, unsigned depth) {
-	if (!rootNode) return createKDNode(datapoint);
+KDNode* KDTree::insertKDNodeRecursively(KDNode* rootNode, vector<int> datapoint, unsigned depth, int indexBlock) {
 	unsigned currentDepth = depth % datapoint.size();
-	if (datapoint[currentDepth] < rootNode->dimensions[currentDepth]) rootNode->left = insertKDNodeRecursively(rootNode->left, datapoint, depth + 1);
-	else rootNode->right = insertKDNodeRecursively(rootNode->right, datapoint, depth + 1);
+	cout << "Current Depth: " << currentDepth << endl;
+
+
+	if (!rootNode) 
+		return createKDNode(datapoint);
+
+	if (rootNode->isLeaf && rootNode->dimensions.size() < indexBlock) {
+		cout << "Inserting " << datapoint[0] << "," << datapoint[1] << endl;
+		rootNode->dimensions.push_back(datapoint); // If we can fit datapoint into node's vector
+		return rootNode;
+	}
+
+	else if (rootNode->isLeaf && rootNode->dimensions.size() >= indexBlock) { // Vector is now full. Need to create new node and split
+
+		int splitVal = getMean(rootNode->dimensions, currentDepth);
+		cout << "Splitting Now. Split value is: " << splitVal << endl;
+
+		rootNode->splitValue = splitVal;
+		KDNode * leftNode = new KDNode();
+		leftNode->left = nullptr;
+		leftNode->right = nullptr;
+		leftNode->isLeaf = true;
+
+		KDNode * rightNode = new KDNode();
+		rightNode->left = nullptr;
+		rightNode->right = nullptr;
+		rightNode->isLeaf = true;
+
+		rootNode->dimensions.push_back(datapoint);
+
+		for (int i = 0; i < rootNode->dimensions.size(); i++) {
+			if (rootNode->dimensions[i][currentDepth] < rootNode->splitValue) {
+				leftNode->dimensions.push_back(rootNode->dimensions[i]);
+				cout << "Inserting " << rootNode->dimensions[i][0] << "," << rootNode->dimensions[i][1] << " into Left Node" << endl;
+			}
+			else {
+				rightNode->dimensions.push_back(rootNode->dimensions[i]);
+				cout << "Inserting " << rootNode->dimensions[i][0] << "," << rootNode->dimensions[i][1] << " into Right Node" << endl;
+			}
+		}
+
+		rootNode->dimensions.clear();
+		rootNode->isLeaf = false;
+		rootNode->left = leftNode;
+		rootNode->right = rightNode;
+		return rootNode;
+	}
+
+	else if (!rootNode->isLeaf && datapoint[currentDepth] < rootNode->splitValue)
+		rootNode->left = insertKDNodeRecursively(rootNode->left, datapoint, depth + 1, indexBlock);
+	
+	else if (!rootNode->isLeaf && datapoint[currentDepth] >= rootNode->splitValue)
+		rootNode->right = insertKDNodeRecursively(rootNode->right, datapoint, depth + 1, indexBlock);
+
 	return rootNode;
 }
 
-bool KDTree::searchKDNode(KDNode* rootNode, vector<int> searchPoint) {
+/*bool KDTree::searchKDNode(KDNode* rootNode, vector<int> searchPoint) {
 	return(searchKDNodeRecursively(rootNode, searchPoint, 0));
 }
 
@@ -40,8 +93,7 @@ bool KDTree::searchKDNodeRecursively(KDNode* rootNode, vector<int> searchPoint, 
 	unsigned currentDepth = depth % rootNode->dimensions.size();
 	if (searchPoint[currentDepth] < rootNode->dimensions[currentDepth]) return searchKDNodeRecursively(rootNode->left, searchPoint, depth + 1);
 	return searchKDNodeRecursively(rootNode->right, searchPoint, depth + 1);
-}
-
+}*/
 
 /*
 Input Command: ./rangeQ searchOption database queries (indexBlock)
@@ -63,20 +115,25 @@ bool compareVector(vector<int> i1, vector<int> i2) {
 	return (i1[0] < i2[0]);
 }
 
-int getIndex(vector<vector<int> > myVec, int min) {
+int getIndex(vector<vector<int>> myVec, int min) {
 	for (int i = 0; i < myVec.size(); i++) if (myVec[i][0] >= min) return i;
 	return -1;
 }
 
-
+int getMean(vector<vector<int>> dimensions, unsigned depth) {
+	float runningSum = 0;
+	for (int i = 0; i < dimensions.size(); i++) {
+		runningSum += dimensions[i][depth];
+	}
+	return ceil(runningSum / dimensions.size());
+}
 
 
 //int rangeQuery(int argc, char* argv[]) {
-int rangeQuery(int searchOption, string databaseFile, string queryFile) {
+int rangeQuery(int searchOption, string databaseFile, string queryFile, int indexBlock) {
 	/*int searchOption = atoi(argv[1]);
 	string databaseFile = string(argv[2]);
 	string queryFile = string(argv[3]);*/
-
 
 	/*
 		Array of data points. Each entry in array will contain record
@@ -106,10 +163,6 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile) {
 		}
 	}
 	db.close();
-
-
-
-
 
 	if (searchOption == 0) { // Sequential Search
 		cout << "You have chosen sequential search" << endl;
@@ -173,7 +226,6 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile) {
 		qu.close();
 	}
 
-
 	/*
 		Tree-based options. Each block at leaf level will contain indexBlock number of key->pointer pairs
 	*/
@@ -182,9 +234,11 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile) {
 
 		KDNode* rootNode = nullptr;
 		KDTree tree;
+		tree.indexBlock = indexBlock;
+
 
 		for (int i = 0; i < dataPoints.size(); i++) {
-			rootNode = tree.insertKDNode(rootNode, dataPoints.at(i));
+			rootNode = tree.insertKDNode(rootNode, dataPoints.at(i), indexBlock);
 			//cout << "Entry " << i << ": " << endl;
 			//cout << dataPoints[i][0] << "," << dataPoints[i][1] << endl;
 		}
@@ -195,8 +249,8 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile) {
 
 		vector<int> tempSearch2 = { -10, 515 };
 
-		cout << tree.searchKDNode(rootNode, tempSearch1) << endl;
-		cout << tree.searchKDNode(rootNode, tempSearch2) << endl;
+		//cout << tree.searchKDNode(rootNode, tempSearch1) << endl;
+		//cout << tree.searchKDNode(rootNode, tempSearch2) << endl;
 	}
 
 	else if (searchOption == 2) { // MYkd-tree
@@ -209,8 +263,8 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile) {
 }
 
 int main() {
-	int temp0 = rangeQuery(0, "projDB", "projquery");
-	//int temp1 = rangeQuery(1, "projDB", "queryFile");
+	//int temp0 = rangeQuery(0, "projDB", "projquery", 0);
+	int temp1 = rangeQuery(1, "2dtestDB", "queryFile", 3);
 
 	return 0;
 }

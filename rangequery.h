@@ -10,7 +10,9 @@ using namespace std;
 #pragma once
 
 struct KDNode {
-	vector<int> dimensions;
+	int splitValue;
+	bool isLeaf;
+	vector<vector<int>> dimensions;
 	KDNode* left;
 	KDNode* right;
 };
@@ -23,11 +25,12 @@ struct MyKDNode {
 
 class KDTree {
 public:
-	KDNode* createKDNode(vector<int> dimensions);
-	KDNode* insertKDNode(KDNode* rootNode, vector<int> dataPoint);
-	KDNode* insertKDNodeRecursively(KDNode* rootNode, vector<int> dataPoint, unsigned depth);
-	bool searchKDNode(KDNode* rootNode, vector<int> searchPoint);
-	bool searchKDNodeRecursively(KDNode* rootNode, vector<int> searchPoint, unsigned depth);
+	int indexBlock;
+	KDNode* createKDNode(vector<int> datapoint);
+	KDNode* insertKDNode(KDNode* rootNode, vector<int> dataPoint, int indexBlock);
+	KDNode* insertKDNodeRecursively(KDNode* rootNode, vector<int> dataPoint, unsigned depth, int indexBlock);
+	//bool searchKDNode(KDNode* rootNode, vector<int> searchPoint);
+	//bool searchKDNodeRecursively(KDNode* rootNode, vector<int> searchPoint, unsigned depth);
 
 };
 
@@ -39,3 +42,4 @@ public:
 bool foundPoint(vector<int> nodePoint, vector<int> searchPoint);
 bool compareVector(vector<int> i1, vector<int> i2);
 int getIndex(vector<vector<int> > myVec, int min);
+int getMean(vector<vector<int>> dimensions, unsigned depth);
