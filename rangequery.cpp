@@ -1,6 +1,28 @@
 #include "rangequery.h"
 using namespace std;
 
+KDNode* KDTree::createKDNode(vector<int> dimensions) {
+	KDNode* newNode = new KDNode();
+	for (int i = 0; i < dimensions.size(); i++) newNode->dimensions.push_back(dimensions[i]);
+	newNode->left = nullptr;
+	newNode->right = nullptr;
+	return newNode;
+}
+
+KDNode* KDTree::insertKDNode(KDNode* rootNode, vector<int> dimensions) {
+	return(insertKDNodeRecursively(rootNode, dimensions, 0));
+}
+
+
+KDNode* KDTree::insertKDNodeRecursively(KDNode* rootNode, vector<int> dimensions, unsigned depth) {
+	if (!rootNode) return createKDNode(dimensions);
+
+	unsigned currentDepth = depth % dimensions.size();
+
+	if (dimensions[currentDepth] < rootNode->dimensions[currentDepth]);
+
+}
+
 
 /*
 Input Command: ./rangeQ searchOption database queries (indexBlock)
@@ -24,6 +46,7 @@ Sample Queries:
 	1002 1018 567 573
 	214 246 611 643
 	1 65 1000 1064
+
 
 */
 
@@ -72,7 +95,6 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile) {
 		}
 		db.close();
 	}
-
 
 	/*
 		Tree-based options. Each block at leaf level will contain indexBlock number of key->pointer pairs
