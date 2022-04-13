@@ -111,7 +111,24 @@ Input Command: ./rangeQ searchOption database queries (indexBlock)
 
 */
 
-bool compareVector(vector<int> i1, vector<int> i2) {
+bool compareResult(vector<int> i1, vector<int> i2)
+{
+	for (int i = 0; i < i1.size(); i++)
+	{
+		if (!(i1[i] == i2[i]))
+		{
+			return (i1[i] < i2[i]);
+		}
+		if ((i + 1) >= i1.size())
+		{
+			return (i1[i] < i2[i]);
+		}
+	}
+	return (i1[0] < i2[0]);
+}
+
+bool compareFirstDim(vector<int> i1, vector<int> i2)
+{
 	return (i1[0] < i2[0]);
 }
 
@@ -164,12 +181,12 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 	}
 	db.close();
 
+	std::sort(dataPoints.begin(), dataPoints.end(), compareFirstDim);
+
 	if (searchOption == 0) { // Sequential Search
 		cout << "You have chosen sequential search" << endl;
 
-		// Sort DB points on 1st value
-		sort(dataPoints.begin(), dataPoints.end(), compareVector);
-
+		vector<vector<int>> results;
 		fstream qu;
 		qu.open(queryFile, ios::in);
 		if (qu.is_open()) {
@@ -187,43 +204,63 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 				//Query Info
 				cout << "***** Query: *******" << endl;
 				for (int i = 0; i < query.size(); i += 2) {
-					cout << "Range " << (i / 2) + 1 << ": " << query[i] << "->" << query[i + 1] << endl;
+					cout << "Range " << (i	/ 2) + 1 << ": " << query[i] << "->" << query[i + 1] << endl;
 				}
 
 				//Sort based info
 				int minVal = query[0];
 				int maxVal = query[1];
 				int index = getIndex(dataPoints, minVal);
-				int value = dataPoints[index][0];
+				cout << "Index: " << index << endl;
+				if (index >= 0) {
+					int value = dataPoints[index][0];
 
-				//For loop taking advantage of sort (only looping through 1st dim passes)
-				cout << "Points: " << endl;
-				for (int i = index; value <= maxVal; i++) {
-					vector<bool> pass;
-					for (int j = 2; j < query.size(); j += 2) {
-						if (query[j] <= dataPoints[i][j / 2]) {
-							if (query[j + 1] >= dataPoints[i][j / 2]) pass.push_back(true);
+					//For loop taking advantage of sort (only looping through 1st dim passes)
+					cout << "Points: " << endl;
+					for (int i = index; value <= maxVal; i++) {
+						vector<bool> pass;
+						for (int j = 2; j < query.size(); j += 2) {
+							if (query[j] <= dataPoints[i][j / 2]) {
+								if (query[j + 1] >= dataPoints[i][j / 2]) pass.push_back(true);
+								else pass.push_back(false);
+							}
 							else pass.push_back(false);
 						}
-						else pass.push_back(false);
-					}
 
-					//If it passes 2->k dimmension range query
-					if (find(pass.begin(), pass.end(), false) == pass.end()) {
-						for (int k = 0; k < dataPoints[k].size(); k++) {
-							if (k + 1 == dataPoints[k].size()) cout << dataPoints[i][k] << endl;
-							else cout << dataPoints[i][k] << ",";
+						//If it passes 2->k dimmension range query
+						if (find(pass.begin(), pass.end(), false) == pass.end()) {
+							results.push_back(dataPoints[i]);
 						}
-					}
-					//At end of sorted DB
-					if (i + 1 >= dataPoints.size()) break;
+						//At end of sorted DB
+						if (i + 1 >= dataPoints.size()) break;
 
-					//Set value to next index for conditional 
-					value = dataPoints[i + 1][0];
+						//Set value to next index for conditional 
+						value = dataPoints[i + 1][0];
+					}
 				}
 			}
 		}
 		qu.close();
+
+		// Sort Result Vector on all dimmensions
+		std::sort(results.begin(), results.end(), compareResult);
+
+		// Print sorted list
+		for (int w = 0; w < results.size(); w++)
+		{
+			for (int k = 0; k < results[w].size(); k++)
+			{
+
+				if (k + 1 >= results[w].size())
+				{
+					cout << results[w][k] << endl;
+				}
+				else
+				{
+					cout << results[w][k] << ",";
+				}
+			}
+		}
 	}
 
 	/*
@@ -263,8 +300,8 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 }
 
 int main() {
-	//int temp0 = rangeQuery(0, "projDB", "projquery", 0);
-	int temp1 = rangeQuery(1, "2dtestDB", "queryFile", 3);
+	int temp0 = rangeQuery(0, "2dtestDB", "projquery", 0);
+	//int temp1 = rangeQuery(1, "2dtestDB", "queryFile", 3);
 
 	return 0;
 }
