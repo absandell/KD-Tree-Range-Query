@@ -12,6 +12,7 @@ using namespace std;
 struct KDNode {
 	int splitValue;
 	bool isLeaf;
+	bool isRoot;
 	vector<vector<int>> dimensions;
 	KDNode* left;
 	KDNode* right;
@@ -29,6 +30,9 @@ public:
 	KDNode* createKDNode(vector<int> datapoint);
 	KDNode* insertKDNode(KDNode* rootNode, vector<int> dataPoint, int indexBlock);
 	KDNode* insertKDNodeRecursively(KDNode* rootNode, vector<int> dataPoint, unsigned depth, int indexBlock);
+	vector<vector<int>> KDRangeQuery(KDNode* rootNode, vector<int> queries);
+	void KDRangeQueryRecursive(KDNode* rootNode, vector<int> queries, unsigned depth, vector<vector<int>>& queryResults);
+
 	//bool searchKDNode(KDNode* rootNode, vector<int> searchPoint);
 	//bool searchKDNodeRecursively(KDNode* rootNode, vector<int> searchPoint, unsigned depth);
 

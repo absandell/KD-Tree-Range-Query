@@ -16,6 +16,7 @@ KDNode* KDTree::createKDNode(vector<int> datapoint) {
 	newNode->left = nullptr;
 	newNode->right = nullptr;
 	newNode->isLeaf = true;
+	newNode->isRoot = true;
 	return newNode;
 }
 
@@ -48,11 +49,13 @@ KDNode* KDTree::insertKDNodeRecursively(KDNode* rootNode, vector<int> datapoint,
 		leftNode->left = nullptr;
 		leftNode->right = nullptr;
 		leftNode->isLeaf = true;
+		leftNode->isRoot = false;
 
 		KDNode * rightNode = new KDNode();
 		rightNode->left = nullptr;
 		rightNode->right = nullptr;
 		rightNode->isLeaf = true;
+		rightNode->isRoot = false;
 
 		rootNode->dimensions.push_back(datapoint);
 
@@ -81,6 +84,34 @@ KDNode* KDTree::insertKDNodeRecursively(KDNode* rootNode, vector<int> datapoint,
 		rootNode->right = insertKDNodeRecursively(rootNode->right, datapoint, depth + 1, indexBlock);
 
 	return rootNode;
+}
+
+vector<vector<int>> KDTree::KDRangeQuery(KDNode* rootNode, vector<int> queries) {
+	vector<vector<int>> queryResults;
+	KDRangeQueryRecursive(rootNode, queries, 0, queryResults);
+	return queryResults;
+}
+
+void KDTree::KDRangeQueryRecursive(KDNode* rootNode, vector<int> queries, unsigned depth, vector<vector<int>>& queryResults) {
+	unsigned currentDepth = depth % (queries.size()/2);
+	cout << "Current Depth: " << currentDepth << endl;
+	
+	if (!rootNode->isLeaf && queries[currentDepth*2] < rootNode->splitValue) {
+		cout << "Query Value: " << queries[currentDepth * 2] << " Split Value: " << rootNode->splitValue << endl;
+		KDRangeQueryRecursive(rootNode->left, queries, depth + 1, queryResults);
+	}
+	if (!rootNode->isLeaf && queries[currentDepth * 2 + 1] >= rootNode->splitValue) {
+		cout << "Query Value: " << queries[currentDepth * 2 + 1] << " Split Value: " << rootNode->splitValue << endl;
+		KDRangeQueryRecursive(rootNode->right, queries, depth + 1, queryResults);
+	}
+	if (rootNode->isLeaf && !rootNode->isRoot) {
+		for (int i = 0; i < rootNode->dimensions.size(); i++) {
+			queryResults.push_back(rootNode->dimensions[i]);
+			cout << "Pushing Back: " << rootNode->dimensions[i][0] << "," << rootNode->dimensions[i][1] << endl;
+		}
+		return;
+	}
+	if (rootNode == nullptr) return;
 }
 
 /*bool KDTree::searchKDNode(KDNode* rootNode, vector<int> searchPoint) {
@@ -181,7 +212,7 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 	}
 	db.close();
 
-	std::sort(dataPoints.begin(), dataPoints.end(), compareFirstDim);
+	//std::sort(dataPoints.begin(), dataPoints.end(), compareFirstDim);
 
 	if (searchOption == 0) { // Sequential Search
 		cout << "You have chosen sequential search" << endl;
@@ -195,7 +226,7 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 			while (getline(qu, temp)) {
 				vector<int> query;
 				stringstream line(temp);
-
+				int queryCount = 0;
 				while (line.good()) {
 					string substring;
 					getline(line, substring, ' ');
@@ -280,14 +311,34 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 			//cout << dataPoints[i][0] << "," << dataPoints[i][1] << endl;
 		}
 
-		vector<int> tempSearch1;
-		tempSearch1.push_back(75);
-		tempSearch1.push_back(347);
+		vector<vector<int>> allResults;
+		fstream qu;
+		qu.open(queryFile, ios::in);
+		if (qu.is_open()) {
+			cout << "query file opened" << endl;
+			string temp;
+			while (getline(qu, temp)) {
+				vector<int> query; // each 2 
+				stringstream line(temp);
 
-		vector<int> tempSearch2 = { -10, 515 };
+				while (line.good()) {
+					string substring;
+					getline(line, substring, ' ');
+					query.push_back(stoi(substring));
+				}
+				//Query Info
+				cout << "***** Query: *******" << endl;
+				for (int i = 0; i < query.size(); i += 2) {
+					cout << "Range " << (i / 2) + 1 << ": " << query[i] << "->" << query[i + 1] << endl;
+				}
 
-		//cout << tree.searchKDNode(rootNode, tempSearch1) << endl;
-		//cout << tree.searchKDNode(rootNode, tempSearch2) << endl;
+				//Sort based info
+				vector<vector<int>> queryResults;
+				
+				queryResults = tree.KDRangeQuery(rootNode, query);
+			}
+		}
+		qu.close();
 	}
 
 	else if (searchOption == 2) { // MYkd-tree
@@ -300,8 +351,8 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 }
 
 int main() {
-	int temp0 = rangeQuery(0, "2dtestDB", "projquery", 0);
-	//int temp1 = rangeQuery(1, "2dtestDB", "queryFile", 3);
+	//int temp0 = rangeQuery(0, "2dtestDB", "projquery", 0);
+	int temp1 = rangeQuery(1, "2dtestDB", "projquery", 3);
 
 	return 0;
 }
