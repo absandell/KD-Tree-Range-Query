@@ -47,4 +47,5 @@ bool foundPoint(vector<int> nodePoint, vector<int> searchPoint);
 bool compareResult(vector<int> i1, vector<int> i2);
 bool compareFirstDim(vector<int> i1, vector<int> i2);
 int getIndex(vector<vector<int> > myVec, int min);
-int getMean(vector<vector<int>> dimensions, unsigned depth);
+int getMedian(vector<vector<int>> dimensions, unsigned depth);
+void printResult(vector<vector<int>> results);
