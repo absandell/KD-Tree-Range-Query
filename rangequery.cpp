@@ -22,11 +22,11 @@ KDNode* KDTree::createKDLeaf() {
 	return newNode;
 }
 
-KDNode* KDTree::insertKDNode(KDNode* rootNode, vector<int>& dataPoint, int indexBlock) {
-	return(insertKDNodeRecursively(rootNode, dataPoint, 0, indexBlock));
+KDNode* KDTree::insertKDNode(KDNode* rootNode, vector<int>& dataPoint) {
+	return(insertKDNodeRecursively(rootNode, dataPoint, 0));
 }
 
-KDNode* KDTree::insertKDNodeRecursively(KDNode* rootNode, vector<int>& datapoint, unsigned depth, int indexBlock) {
+KDNode* KDTree::insertKDNodeRecursively(KDNode* rootNode, vector<int>& datapoint, unsigned depth) {
 	unsigned currentDepth = depth % datapoint.size();
 
 	if (!rootNode) 
@@ -49,7 +49,7 @@ KDNode* KDTree::insertKDNodeRecursively(KDNode* rootNode, vector<int>& datapoint
 
 		vector<vector<int>> dimensionsCopy = rootNode->dimensions;
 
-		rootNode->dimensions.clear();
+		//rootNode->dimensions.clear();
 		rootNode->isLeaf = false;
 		rootNode->left = leftNode;
 		rootNode->right = rightNode;
@@ -59,12 +59,12 @@ KDNode* KDTree::insertKDNodeRecursively(KDNode* rootNode, vector<int>& datapoint
 			//cout << "Trying to insert: " << dimensionsCopy[i][0] << "," << dimensionsCopy[i][1] << endl;
 			if (dimensionsCopy[i][currentDepth] < rootNode->splitValue) {
 				//leftNode->dimensions.push_back(rootNode->dimensions[i]);
-				insertKDNodeRecursively(leftNode, dimensionsCopy[i], depth + 1, indexBlock);
+				insertKDNodeRecursively(leftNode, dimensionsCopy[i], depth + 1);
 				//cout << "Inserting " << dimensionsCopy[i][0] << "," << dimensionsCopy[i][1] << " into Left Node" << endl;
 			}
 			else if (dimensionsCopy[i][currentDepth] >= rootNode->splitValue) {
 				//rightNode->dimensions.push_back(rootNode->dimensions[i]);
-				insertKDNodeRecursively(rightNode, dimensionsCopy[i], depth + 1, indexBlock);
+				insertKDNodeRecursively(rightNode, dimensionsCopy[i], depth + 1);
 				//cout << "Inserting " << dimensionsCopy[i][0] << "," << dimensionsCopy[i][1] << " into Right Node" << endl;
 			}
 
@@ -74,10 +74,10 @@ KDNode* KDTree::insertKDNodeRecursively(KDNode* rootNode, vector<int>& datapoint
 	}
 
 	else if (!rootNode->isLeaf && datapoint[currentDepth] < rootNode->splitValue)
-		rootNode->left = insertKDNodeRecursively(rootNode->left, datapoint, depth + 1, indexBlock);
+		rootNode->left = insertKDNodeRecursively(rootNode->left, datapoint, depth + 1);
 	
 	else if (!rootNode->isLeaf && datapoint[currentDepth] >= rootNode->splitValue)
-		rootNode->right = insertKDNodeRecursively(rootNode->right, datapoint, depth + 1, indexBlock);
+		rootNode->right = insertKDNodeRecursively(rootNode->right, datapoint, depth + 1);
 
 	return rootNode;
 }
@@ -123,6 +123,14 @@ void KDTree::KDRangeQueryRecursive(KDNode* rootNode, vector<int>& queries, unsig
 		return;
 	}
 	if (rootNode == nullptr) return;
+}
+
+void KDTree::deleteKDTree(KDNode* rootNode) {
+	if (rootNode) {
+		deleteKDTree(rootNode->left);
+		deleteKDTree(rootNode->right);
+		free(rootNode);
+	}
 }
 
 
@@ -229,13 +237,13 @@ void MyKDTree::MyKDRangeQueryRecursive(MyKDNode* rootNode, vector<int>& queries,
 	int maxQuery = queries[currentDepth * 2 + 1];
 
 	if (!rootNode->isLeaf && minQuery < rootNode->splitValue) {
-		if (rootNode->left->isLeaf && (rootNode->left->max >= minQuery || rootNode->left->min <= maxQuery))
+		//if (rootNode->left->isLeaf && (rootNode->left->max >= minQuery || rootNode->left->min <= maxQuery))
 			//cout << "In Here" << endl;
 			MyKDRangeQueryRecursive(rootNode->left, queries, depth + 1, queryResults);
 	}
 	if (!rootNode->isLeaf && queries[currentDepth * 2 + 1] >= rootNode->splitValue) {
 		//cout << "Query Value: " << queries[currentDepth * 2 + 1] << " Split Value: " << rootNode->splitValue << endl;
-		if (rootNode->right->isLeaf && (rootNode->right->max >= minQuery || rootNode->right->min <= maxQuery))
+		//if (rootNode->right->isLeaf && (rootNode->right->max >= minQuery || rootNode->right->min <= maxQuery))
 			//cout << "In Here 2" << endl;
 			MyKDRangeQueryRecursive(rootNode->right, queries, depth + 1, queryResults);
 	}
@@ -262,6 +270,14 @@ void MyKDTree::MyKDRangeQueryRecursive(MyKDNode* rootNode, vector<int>& queries,
 		return;
 	}
 	if (rootNode == nullptr) return;
+}
+
+void MyKDTree::deleteMyKDTree(MyKDNode* rootNode) {
+	if (rootNode) {
+		deleteMyKDTree(rootNode->left);
+		deleteMyKDTree(rootNode->right);
+		free(rootNode);
+	}
 }
 
 /* Helper Functions */
@@ -436,10 +452,10 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 	}
 	db.close();
 
-	std::sort(dataPoints.begin(), dataPoints.end(), compareFirstDim);
+	//std::sort(dataPoints.begin(), dataPoints.end(), compareFirstDim);
 
 	if (searchOption == 0) { // Sequential Search
-		//std::sort(dataPoints.begin(), dataPoints.end(), compareFirstDim);
+		std::sort(dataPoints.begin(), dataPoints.end(), compareFirstDim);
 		//cout << "You have chosen sequential search" << endl;
 
 		vector<vector<int>> results;
@@ -507,9 +523,11 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 		KDNode* rootNode = nullptr;
 		KDTree tree;
 		auto buildStart = Clock::now();
+		
+		tree.indexBlock = indexBlock;
 
 		for (int i = 0; i < dataPoints.size(); i++) {
-			rootNode = tree.insertKDNode(rootNode, dataPoints.at(i), indexBlock);
+			rootNode = tree.insertKDNode(rootNode, dataPoints.at(i));
 		}
 
 		auto buildEnd = Clock::now();
@@ -549,7 +567,7 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 			}
 		}
 		qu.close();
-		//printResult(results);
+		tree.deleteKDTree(rootNode);
 	}
 
 	else if (searchOption == 2) { // MYkd-tree
@@ -605,7 +623,7 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 			}
 		}
 		qu.close();
-		//printResult(results);
+		
 	}
 
 	else cout << "Please enter a valid query selection!" << endl;
@@ -636,10 +654,10 @@ int main() {
 	//int temp6 = rangeQuery(0, "projDB", "projquery", 0);
 
 	cout << "\nDB KD" << endl;
-	//int temp7 = rangeQuery(1, "projDB", "projquery", 50);
+	int temp7 = rangeQuery(1, "projDB", "projquery", 100);
 
 	cout << "\nDB MyKD" << endl;
-	int temp8 = rangeQuery(2, "projDB", "projquery", 50);
+	//int temp8 = rangeQuery(2, "projDB", "projquery", 100);
 
 	return 0;
 }

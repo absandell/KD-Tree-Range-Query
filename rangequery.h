@@ -18,6 +18,10 @@ struct KDNode {
 	vector<vector<int>> dimensions;
 	KDNode* left;
 	KDNode* right;
+	~KDNode() {
+		delete left;
+		delete right;
+	}
 };
 
 struct MyKDNode {
@@ -29,16 +33,22 @@ struct MyKDNode {
 	vector<vector<int>> dimensions;
 	MyKDNode* left;
 	MyKDNode* right;
+	~MyKDNode() {
+		delete left;
+		delete right;
+	}
 };
 
 class KDTree {
 public:
+	int indexBlock;
 	KDNode* createKDNode(vector<int>& datapoint);
 	KDNode* createKDLeaf();
-	KDNode* insertKDNode(KDNode* rootNode, vector<int>& dataPoint, int indexBlock);
-	KDNode* insertKDNodeRecursively(KDNode* rootNode, vector<int> &dataPoint, unsigned depth, int indexBlock);
+	KDNode* insertKDNode(KDNode* rootNode, vector<int>& dataPoint);
+	KDNode* insertKDNodeRecursively(KDNode* rootNode, vector<int> &dataPoint, unsigned depth);
 	vector<vector<int>> KDRangeQuery(KDNode* rootNode, vector<int> &queries);
 	void KDRangeQueryRecursive(KDNode* rootNode, vector<int> &queries, unsigned depth, vector<vector<int>>& queryResults);
+	void deleteKDTree(KDNode* rootNode);
 };
 
 class MyKDTree {
@@ -49,6 +59,7 @@ public:
 	MyKDNode* insertMyKDNodeRecursively(MyKDNode* rootNode, vector<int> &dataPoint, unsigned depth, int indexBlock);
 	vector<vector<int>> MyKDRangeQuery(MyKDNode* rootNode, vector<int> &queries);
 	void MyKDRangeQueryRecursive(MyKDNode* rootNode, vector<int> &queries, unsigned depth, vector<vector<int>>& queryResults);
+	void deleteMyKDTree(MyKDNode* rootNode);
 
 };
 
