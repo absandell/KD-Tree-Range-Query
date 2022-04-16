@@ -172,20 +172,21 @@ double MyKDTree::standardDev(vector<vector<int> > points, int dim){
 	}
 	return sqrt(sDev/size);
 }
+
 MyKDNode* MyKDTree::insertMyKDNodeRecursively(MyKDNode* rootNode, vector<int> &datapoint, int indexBlock){
 
 	if (!rootNode)
 		return createMyKDNode(datapoint);
 
 	if (rootNode->isLeaf && rootNode->dimensions.size() < indexBlock) {
-		cout << "Inserting " << datapoint[0] << "," << datapoint[1] << endl;
+		// cout << "Inserting " << datapoint[0] << "," << datapoint[1] << endl;
 		rootNode->dimensions.push_back(datapoint); // If we can fit datapoint into node's vector
 		return rootNode;
 	}
 
 	else if (rootNode->isLeaf && rootNode->dimensions.size() >= indexBlock) { // Vector is now full. Need to create new node and split
 		rootNode->dimensions.push_back(datapoint);
-		int bestDim;
+		int bestDim = 0;
 		double bestSD = 0;
 		for(int i = 0; i < datapoint.size(); i++){
 			double sd = standardDev(rootNode->dimensions, i);
@@ -194,7 +195,20 @@ MyKDNode* MyKDTree::insertMyKDNodeRecursively(MyKDNode* rootNode, vector<int> &d
 				bestDim = i;
 			}
 		}
+
 		double splitVal = getMedian(rootNode->dimensions, bestDim);
+
+		bool addOne = true;
+
+		for(int i = 0; i < rootNode->dimensions.size(); i++){
+			if(rootNode->dimensions[i][bestDim] < splitVal){
+				addOne = false;
+			}
+		}
+
+		if(addOne){
+			splitVal+= 1;
+		}
 
 		rootNode->splitValue = splitVal;
 		rootNode->dim = bestDim;
@@ -207,21 +221,31 @@ MyKDNode* MyKDTree::insertMyKDNodeRecursively(MyKDNode* rootNode, vector<int> &d
 		rootNode->isLeaf = false;
 		rootNode->left = leftNode;
 		rootNode->right = rightNode;
-
-		for (int i = 0; i < dimensionsCopy.size(); i++) {
-			//cout << "i: " << i << endl;
-			//cout << "Trying to insert: " << dimensionsCopy[i][0] << "," << dimensionsCopy[i][1] << endl;
-			if (dimensionsCopy[i][rootNode->dim] < rootNode->splitValue) {
-				//leftNode->dimensions.push_back(rootNode->dimensions[i]);
+		if(bestSD == 0){
+			
+			for (int i = 0; i < (dimensionsCopy.size()/2); i++) {
 				insertMyKDNodeRecursively(leftNode, dimensionsCopy[i],  indexBlock);
-				//cout << "Inserting " << dimensionsCopy[i][0] << "," << dimensionsCopy[i][1] << " into Left Node" << endl;
 			}
-			else if (dimensionsCopy[i][rootNode->dim] >= rootNode->splitValue) {
-				//rightNode->dimensions.push_back(rootNode->dimensions[i]);
-				insertMyKDNodeRecursively(rightNode, dimensionsCopy[i], indexBlock);
-				//cout << "Inserting " << dimensionsCopy[i][0] << "," << dimensionsCopy[i][1] << " into Right Node" << endl;
+			for (int i = (dimensionsCopy.size()/2); i < dimensionsCopy.size(); i++) {
+				insertMyKDNodeRecursively(rightNode, dimensionsCopy[i],  indexBlock);
 			}
+		}
+		else{
+			for (int i = 0; i < dimensionsCopy.size(); i++) {
+				//cout << "i: " << i << endl;
+				//cout << "Trying to insert: " << dimensionsCopy[i][0] << "," << dimensionsCopy[i][1] << endl;
+				if (dimensionsCopy[i][rootNode->dim] < rootNode->splitValue) {
+					//leftNode->dimensions.push_back(rootNode->dimensions[i]);
+					insertMyKDNodeRecursively(leftNode, dimensionsCopy[i],  indexBlock);
+					//cout << "Inserting " << dimensionsCopy[i][0] << "," << dimensionsCopy[i][1] << " into Left Node" << endl;
+				}
+				else if (dimensionsCopy[i][rootNode->dim] >= rootNode->splitValue) {
+					//rightNode->dimensions.push_back(rootNode->dimensions[i]);
+					insertMyKDNodeRecursively(rightNode, dimensionsCopy[i], indexBlock);
+					//cout << "Inserting " << dimensionsCopy[i][0] << "," << dimensionsCopy[i][1] << " into Right Node" << endl;
+				}
 
+			}
 		}
 
 		return rootNode;
@@ -471,8 +495,7 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 	if (searchOption == 0) { // Sequential Search
 		std::sort(dataPoints.begin(), dataPoints.end(), compareFirstDim);
 		//cout << "You have chosen sequential search" << endl;
-
-		vector<vector<int> > results;
+		
 		fstream qu;
 		qu.open(queryFile, ios::in);
 		if (qu.is_open()) {
@@ -480,6 +503,7 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 			string temp;
 			while (getline(qu, temp)) {
 				vector<int> query;
+				vector<vector<int> > results;
 				stringstream line(temp);
 				int queryCount = 0;
 				while (line.good()) {
@@ -525,12 +549,13 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 						//Set value to next index for conditional 
 						value = dataPoints[i + 1][0];
 					}
+					printResult(results);
 				}
 			}
 		}
 		qu.close();
 
-		printResult(results);
+
 	}
 
 	else if (searchOption == 1) { // kd-tree
@@ -659,19 +684,19 @@ int main() {
 	// int temp3 = rangeQuery(1, "3dtestDB", "3dprojquery", 50);
 
 	// cout << "\n2d MyKD" << endl;
-	int temp4 = rangeQuery(2, "2dtestDB", "2dprojquery", 4);
+	//int temp4 = rangeQuery(2, "2dtestDB", "2dprojquery", 2);
 
 	// cout << "\n3d MyKD" << endl;
-	// int temp5 = rangeQuery(2, "3dtestDB", "3dprojquery", 50);
+	//int temp5 = rangeQuery(2, "3dtestDB", "3dprojquery", 2);
 
 	// cout << "\nDB Sequential" << endl;
-	//int temp6 = rangeQuery(0, "projDB", "projquery", 0);
+	// int temp6 = rangeQuery(0, "projDB", "projquery", 0);
 
 	// cout << "\nDB KD" << endl;
-	// int temp7 = rangeQuery(1, "projDB", "projquery", 100);
+	// int temp7 = rangeQuery(1, "projDB", "projquery", 50);
 
-	//cout << "\nDB MyKD" << endl;
-	//int temp8 = rangeQuery(2, "projDB", "projquery", 100);
+	cout << "\nDB MyKD" << endl;
+	int temp8 = rangeQuery(2, "projDB", "projquery", 50);
 
 	return 0;
 }
