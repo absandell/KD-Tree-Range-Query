@@ -1,5 +1,5 @@
 # RangeQuery
-Andrew Sandell: asandell@ufl.
+Andrew Sandell: asandell@ufl.edu
 
 Mack Hummel: mackhummel@ufl.edu
 
