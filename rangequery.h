@@ -53,10 +53,11 @@ public:
 
 class MyKDTree {
 public:
+	int indexBlock;
 	MyKDNode* createMyKDNode(vector<int>& datapoint);
 	MyKDNode* createMyKDLeaf();
-	MyKDNode* insertMyKDNode(MyKDNode* rootNode, vector<int> &dataPoint, int indexBlock);
-	MyKDNode* insertMyKDNodeRecursively(MyKDNode* rootNode, vector<int> &dataPoint, int indexBlock);
+	MyKDNode* insertMyKDNode(MyKDNode* rootNode, vector<int> &dataPoint);
+	MyKDNode* insertMyKDNodeRecursively(MyKDNode* rootNode, vector<int> &dataPoint);
 	vector<vector<int> > MyKDRangeQuery(MyKDNode* rootNode, vector<int> &queries);
 	void MyKDRangeQueryRecursive(MyKDNode* rootNode, vector<int> &queries,  vector<vector<int> >& queryResults);
 	void deleteMyKDTree(MyKDNode* rootNode);
@@ -66,7 +67,7 @@ public:
 bool foundPoint(vector<int> nodePoint, vector<int> searchPoint);
 bool compareResult(vector<int> i1, vector<int> i2);
 bool compareFirstDim(vector<int> i1, vector<int> i2);
-int getIndex(vector<vector<int> > myVec, int min);
-double getMedian(vector<vector<int> > dimensions, unsigned depth);
-void printResult(vector<vector<int> > results);
-vector<double> getSplitVals(vector<vector<int> > dimensions, unsigned depth);
+int getIndex(vector<vector<int>> myVec, int min);
+double getMedian(vector<vector<int>> dimensions, unsigned depth);
+void printResult(vector<vector<int>> results);
+void printToFile(vector<vector<int> > results, string outputFileName);
