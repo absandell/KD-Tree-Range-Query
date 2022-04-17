@@ -1,5 +1,5 @@
-rangequery: rangequery.o
-        g++ rangequery.o -o rangequery
+rangeQ: rangeQ.o
+        g++ rangeQ.o -o rangeQ
 
-rangequery.o: rangequery.cpp rangequery.h
-        g++ -c rangequery.cpp
+rangeQ.o: rangeQ.cpp rangeQ.h
+        g++ -c rangeQ.cpp
