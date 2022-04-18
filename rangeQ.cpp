@@ -76,11 +76,13 @@ KDNode* KDTree::insertKDNodeRecursively(KDNode* rootNode, vector<int>& datapoint
 
 vector<vector<int> > KDTree::KDRangeQuery(KDNode* rootNode, vector<int>& queries) {
 	vector<vector<int> > results;
+	if (queries.empty()) return results;
 	KDRangeQueryRecursive(rootNode, queries, 0, results);
 	return results;
 }
 
 void KDTree::KDRangeQueryRecursive(KDNode* rootNode, vector<int>& queries, unsigned depth, vector<vector<int> >& queryResults) {
+	if (queries.empty()) return;
 	unsigned currentDepth = depth % (queries.size()/2);
 	
 	if (!rootNode->isLeaf && queries[currentDepth*2] < rootNode->splitValue) {
@@ -229,11 +231,13 @@ MyKDNode* MyKDTree::insertMyKDNodeRecursively(MyKDNode* rootNode, vector<int> &d
 
 vector<vector<int> > MyKDTree::MyKDRangeQuery(MyKDNode* rootNode, vector<int>& queries){
 	vector<vector<int> > results;
+	if (queries.empty()) return results;
 	MyKDRangeQueryRecursive(rootNode, queries,  results);
 	return results;
 }
 
 void MyKDTree::MyKDRangeQueryRecursive(MyKDNode* rootNode, vector<int>& queries, vector<vector<int> >& queryResults){
+	if (queries.empty()) return;
 	unsigned currentDepth = rootNode->dim % (queries.size() / 2);
 
 	int minQuery = queries[currentDepth * 2];
@@ -403,7 +407,7 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 
 		auto buildEnd = Clock::now();
 		chrono::duration<double> buildElapsed = buildEnd - buildStart;
-		cout << "Build Time: " << buildElapsed.count() << endl;
+		//cout << "Build Time: " << buildElapsed.count() << endl;
 
 		fstream qu;
 		ofstream outputFile;
@@ -419,67 +423,72 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 				outputFile.open("SequentialOutput.txt", fstream::app);
 				vector<int> query;
 				vector<vector<int> > results;
-				stringstream line(temp);
+				stringstream lineStream(temp);
 				int queryCount = 0;
-				while (line.good()) {
-					string substring;
-					getline(line, substring, ' ');
-					query.push_back(stoi(substring));
+
+				int value;
+				while (lineStream >> value) {
+					query.push_back(value);
 				}
+
 				//Query Info
 				/*cout << "\n***** Query: *******" << endl;
 				for (int i = 0; i < query.size(); i += 2) {
 					cout << "Range " << (i	/ 2) + 1 << ": " << query[i] << "->" << query[i + 1] << endl;
 				}*/
-				outputFile << "\n***** Query: *******" << endl;
-				for (int i = 0; i < query.size(); i += 2) {
-					outputFile << "Range " << (i / 2) + 1 << ": " << query[i] << "->" << query[i + 1] << endl;
-				}
-
-				//Sort based info
-				int minVal = query[0];
-				int maxVal = query[1];
-				int index = getIndex(dataPoints, minVal);
-				if (index >= 0) {
-					int value = dataPoints[index][0];
-
-					//For loop taking advantage of sort (only looping through 1st dim passes)
-					for (int i = index; value <= maxVal; i++) {
-						vector<bool> pass;
-						for (int j = 2; j < query.size(); j += 2) {
-							if (query[j] <= dataPoints[i][j / 2]) {
-								if (query[j + 1] >= dataPoints[i][j / 2]) 
-									pass.push_back(true);
-								else 
-									pass.push_back(false);
-							}
-							else pass.push_back(false);
-						}
-
-						//If it passes 2->k dimmension range query
-						if (find(pass.begin(), pass.end(), false) == pass.end()) {
-							results.push_back(dataPoints[i]);
-						}
-						//At end of sorted DB
-						if (i + 1 >= dataPoints.size()) break;
-
-						//Set value to next index for conditional 
-						value = dataPoints[i + 1][0];
+				if (!query.empty()) {
+					outputFile << "\n***** Query: *******" << endl;
+					for (int i = 0; i < query.size(); i += 2) {
+						outputFile << "Range " << (i / 2) + 1 << ": " << query[i] << "->" << query[i + 1] << endl;
 					}
-					//printResult(results);
 
-					outputFile.close();
-					printToFile(results, "SequentialOutput.txt");
+					//Sort based info
+					int minVal = query[0];
+					int maxVal = query[1];
+					int index = getIndex(dataPoints, minVal);
+					if (index >= 0) {
+						int value = dataPoints[index][0];
+
+						//For loop taking advantage of sort (only looping through 1st dim passes)
+						for (int i = index; value <= maxVal; i++) {
+							vector<bool> pass;
+							for (int j = 2; j < query.size(); j += 2) {
+								if (query[j] <= dataPoints[i][j / 2]) {
+									if (query[j + 1] >= dataPoints[i][j / 2])
+										pass.push_back(true);
+									else
+										pass.push_back(false);
+								}
+								else pass.push_back(false);
+							}
+
+							//If it passes 2->k dimmension range query
+							if (find(pass.begin(), pass.end(), false) == pass.end()) {
+								results.push_back(dataPoints[i]);
+							}
+							//At end of sorted DB
+							if (i + 1 >= dataPoints.size()) break;
+
+							//Set value to next index for conditional 
+							value = dataPoints[i + 1][0];
+						}
+						//printResult(results);
+
+						outputFile.close();
+						printToFile(results, "SequentialOutput.txt");
+					}
+					else {
+						outputFile << "********************\n" << endl;
+						outputFile.close();
+						//cout << "********************\n" << endl;
+					}
+
 				}
-				else {
-					outputFile << "********************\n" << endl;
-					outputFile.close();
-					//cout << "********************\n" << endl;
-				}
+				
 			}
 			auto queryEnd = Clock::now();
 			chrono::duration<double> queryElapsed = queryEnd - queryStart;
-			cout << "Query Time: " << queryElapsed.count() << endl;
+			//cout << "Query Time: " << queryElapsed.count() << endl;
 		}
 		outputFile.close();
 		qu.close();
@@ -499,7 +508,7 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 
 		auto buildEnd = Clock::now();
 		chrono::duration<double> buildElapsed = buildEnd - buildStart;
-		cout << "Build Time: " << buildElapsed.count() << endl;
+		//cout << "Build Time: " << buildElapsed.count() << endl;
 
 		vector<vector<int> > results;
 		fstream qu;
@@ -514,12 +523,11 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 			while (getline(qu, temp)) {
 				outputFile.open("KD-TreeOutput.txt", fstream::app);
 				vector<int> query; // each 2 
-				stringstream line(temp);
+				stringstream lineStream(temp);
 
-				while (line.good()) {
-					string substring;
-					getline(line, substring, ' ');
-					query.push_back(stoi(substring));
+				int value;
+				while (lineStream >> value) {
+					query.push_back(value);
 				}
 				
 				vector<vector<int> > tempResults;
@@ -531,19 +539,22 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 					cout << "Range " << (i / 2) + 1 << ": " << query[i] << "->" << query[i + 1] << endl;
 				}*/
 
-				outputFile << "\n***** Query: *******" << endl;
-				for (int i = 0; i < query.size(); i += 2) {
-					outputFile << "Range " << (i / 2) + 1 << ": " << query[i] << "->" << query[i + 1] << endl;
+				if (!query.empty()) {
+					outputFile << "\n***** Query: *******" << endl;
+					for (int i = 0; i < query.size(); i += 2) {
+						outputFile << "Range " << (i / 2) + 1 << ": " << query[i] << "->" << query[i + 1] << endl;
+					}
+
+					//printResult(tempResults);
+
+					outputFile.close();
+					printToFile(tempResults, "KD-TreeOutput.txt");
 				}
 
-				//printResult(tempResults);
-
-				outputFile.close();
-				printToFile(tempResults, "KD-TreeOutput.txt");
 			}
 			auto queryEnd = Clock::now();
 			chrono::duration<double> queryElapsed = queryEnd - queryStart;
-			cout << "Query Time: " << queryElapsed.count() << endl;
+			//cout << "Query Time: " << queryElapsed.count() << endl;
 
 		}
 		qu.close();
@@ -565,7 +576,7 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 
 		auto buildEnd = Clock::now();
 		chrono::duration<double> buildElapsed = buildEnd - buildStart;
-		cout << "Build Time: " << buildElapsed.count() << endl;
+		//cout << "Build Time: " << buildElapsed.count() << endl;
 
 		vector<vector<int>> results;
 		fstream qu;
@@ -576,39 +587,42 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 		qu.open(queryFile, ios::in);
 		if (qu.is_open()) {
 			string temp;
+			auto queryStart = Clock::now();
 			while (getline(qu, temp)) {
 				outputFile.open("MyKD-TreeOutput.txt", fstream::app);
 				vector<int> query; // each 2 
-				stringstream line(temp);
+				stringstream lineStream(temp);
 
-				while (line.good()) {
-					string substring;
-					getline(line, substring, ' ');
-					query.push_back(stoi(substring));
+				int value;
+				while (lineStream >> value) {
+					query.push_back(value);
 				}
+
 
 				/*cout << "\n***** Query: *******" << endl;
 				for (int i = 0; i < query.size(); i += 2) {
 					cout << "Range " << (i / 2) + 1 << ": " << query[i] << "->" << query[i + 1] << endl;
 				}*/
 
-				outputFile << "\n***** Query: *******" << endl;
-				for (int i = 0; i < query.size(); i += 2) {
-					outputFile << "Range " << (i / 2) + 1 << ": " << query[i] << "->" << query[i + 1] << endl;
+				if (!query.empty()) {
+					outputFile << "\n***** Query: *******" << endl;
+					for (int i = 0; i < query.size(); i += 2) {
+						outputFile << "Range " << (i / 2) + 1 << ": " << query[i] << "->" << query[i + 1] << endl;
+					}
+
+					vector<vector<int> > tempResults;
+					
+					tempResults = tree.MyKDRangeQuery(rootNode, query);;
+
+					//printResult(tempResults);
+
+					outputFile.close();
+					printToFile(tempResults, "MyKD-TreeOutput.txt");
 				}
-
-				vector<vector<int> > tempResults;
-				auto queryStart = Clock::now();
-				tempResults = tree.MyKDRangeQuery(rootNode, query);
-				auto queryEnd = Clock::now();
-				chrono::duration<double> queryElapsed = queryEnd - queryStart;
-				cout << "Query Time: " << queryElapsed.count() << endl;
-
-				//printResult(tempResults);
-
-				outputFile.close();
-				printToFile(tempResults, "MyKD-TreeOutput.txt");
 			}
+			auto queryEnd = Clock::now();
+			chrono::duration<double> queryElapsed = queryEnd - queryStart;
+			//cout << "Query Time: " << queryElapsed.count() << endl;
 		}
 		qu.close();
 		tree.deleteMyKDTree(rootNode);
@@ -619,12 +633,7 @@ int rangeQuery(int searchOption, string databaseFile, string queryFile, int inde
 	return 0;
 }
 
-int main(){
-/*int main(int argc, char* argv[]) {
-	//cout << argv[1] << endl;
-	//cout << argv[2] << endl;
-	//cout << argv[3] << endl;
-	//int searchOption = 1;
+int main(int argc, char* argv[]) {
 	int searchOption = atoi(argv[1]);
 	string databaseFile = string(argv[2]);
 	string queryFile = string(argv[3]);
@@ -634,25 +643,7 @@ int main(){
 		indexBlock = atoi(argv[4]);
 	}
 
-	int temp = rangeQuery(searchOption, databaseFile, queryFile, indexBlock);*/
-
-
-	// cout << "\nDB Sequential" << endl;
-	/*int temp6 = rangeQuery(0, "projDB", "test2.txt", 0);
-	temp6 = rangeQuery(0, "projDB", "test2.txt", 0);
-	temp6 = rangeQuery(0, "projDB", "test2.txt", 0);
-	temp6 = rangeQuery(0, "projDB", "test2.txt", 0);
-	temp6 = rangeQuery(0, "projDB", "test2.txt", 0);*/
-
-	// cout << "\nDB KD" << endl;
-	int temp6 = rangeQuery(1, "projDB", "test2.txt", 50);
-	temp6 = rangeQuery(1, "projDB", "test2.txt", 50);
-	temp6 = rangeQuery(1, "projDB", "test2.txt", 50);
-	temp6 = rangeQuery(1, "projDB", "test2.txt", 50);
-	temp6 = rangeQuery(1, "projDB", "test2.txt", 50);
-
-	//cout << "\nDB MyKD" << endl;
-	//int temp8 = rangeQuery(2, "projDB", "projquery", 2);
+	int temp = rangeQuery(searchOption, databaseFile, queryFile, indexBlock);
 
 	return 0;
 }
