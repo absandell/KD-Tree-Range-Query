@@ -1,4 +1,4 @@
-# rangeQ
+# KD-Tree / MyKD-Tree Range Query
 ## Contributors
 Andrew Sandell: asandell@ufl.edu
 
